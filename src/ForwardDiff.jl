@@ -3,8 +3,7 @@
 module ForwardDiff
 
 #=
-This is a mock implementation of forward-mode AD using Cassette. This code does not
-actually run yet, but it hopefully will in a week or so.
+This is a mock implementation of forward-mode AD using Cassette.
 
 The below implementation constitutes a nearly complete replacement of ForwardDiff's dual
 numbers for unary and binary functions. Besides being drastically simpler code, note in
