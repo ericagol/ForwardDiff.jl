@@ -19,10 +19,14 @@ implementation can compute the correct result even in the presence of perturbati
 contexts can be completely unaware of `DiffCtx` and still compose correctly.
 =#
 
-using Cassette: @context, @primitive, unbox, meta, Box
+using Cassette: @context, @primitive, unbox, meta, hasmeta, overdub, Box
 using DiffRules
 
 @context DiffCtx
+
+################################
+# "dual number" implementation #
+################################
 
 for (M, f, arity) in DiffRules.diffrules()
     M == :Base || continue
@@ -57,5 +61,25 @@ end
 propagate(dfdx::Number, dx::AbstractVector) = dfdx * dx
 
 propagate(dfdx::Number, dx::AbstractVector, dfdy::Number, dy::AbstractVector) = propagate(dfdx, dx) + propagate(dfdy, dy)
+
+#######
+# API #
+#######
+
+isscalar(::Type{<:Any}) = false
+isscalar(::Type{<:Number}) = true
+isscalar(::Type{<:Box{<:Any,U}}) where {U} = isscalar(U)
+isscalar(x) = isscalar(typeof(x))
+
+function diff(f, x)
+    ctx = DiffCtx(f)
+    if isscalar(x)
+        y = overdub(ctx, f)(Box(ctx, x, [one(x)]))
+        if isscalar(y)
+            return hasmeta(ctx, y) ? meta(ctx, y)[] : zero(unbox(ctx, y))
+        end
+    end
+    error("API does not yet support non-scalar functions")
+end
 
 end # module ForwardDiff
