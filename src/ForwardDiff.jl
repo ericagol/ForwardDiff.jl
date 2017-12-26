@@ -19,7 +19,7 @@ implementation can compute the correct result even in the presence of perturbati
 contexts can be completely unaware of `DiffCtx` and still compose correctly.
 =#
 
-using Cassette: @context, @primitive, unwrap, meta, Wrapper
+using Cassette: @context, @primitive, unbox, meta, Box
 using SpecialFunctions
 using DiffRules
 
@@ -29,26 +29,26 @@ for (M, f, arity) in DiffRules.diffrules()
     if arity == 1
         dfdx = DiffRules.diffrule(M, f, :vx)
         @eval begin
-            @primitive ctx::DiffCtx function (::typeof($f))(x::@Wrapper)
-                vx, dx = unwrap(ctx, x), meta(ctx, x)
-                return Wrapper(ctx, $f(vx), propagate($dfdx, dx))
+            @primitive ctx::DiffCtx function (::typeof($f))(x::@Box)
+                vx, dx = unbox(ctx, x), meta(ctx, x)
+                return Box(ctx, $f(vx), propagate($dfdx, dx))
             end
         end
     elseif arity == 2
         dfdx, dfdy = DiffRules.diffrule(M, f, :vx, :vy)
         @eval begin
-            @primitive ctx::DiffCtx function (::typeof($f))(x::@Wrapper, y::@Wrapper)
-                vx, dx = unwrap(ctx, x), meta(ctx, x)
-                vy, dy = unwrap(ctx, y), meta(ctx, y)
-                return Wrapper(ctx, $f(vx, vy), propagate($dfdx, dx, $dfdy, dy))
+            @primitive ctx::DiffCtx function (::typeof($f))(x::@Box, y::@Box)
+                vx, dx = unbox(ctx, x), meta(ctx, x)
+                vy, dy = unbox(ctx, y), meta(ctx, y)
+                return Box(ctx, $f(vx, vy), propagate($dfdx, dx, $dfdy, dy))
             end
-            @primitive ctx::DiffCtx function (::typeof($f))(x::@Wrapper, vy)
-                vx, dx = unwrap(ctx, x), meta(ctx, x)
-                return Wrapper(ctx, $f(vx, vy), propagate($dfdx, dx))
+            @primitive ctx::DiffCtx function (::typeof($f))(x::@Box, vy)
+                vx, dx = unbox(ctx, x), meta(ctx, x)
+                return Box(ctx, $f(vx, vy), propagate($dfdx, dx))
             end
-            @primitive ctx::DiffCtx function (::typeof($f))(vx, y::@Wrapper)
-                vy, dy = unwrap(ctx, y), meta(ctx, y)
-                return Wrapper(ctx, $f(vx, vy), propagate($dfdy, dy))
+            @primitive ctx::DiffCtx function (::typeof($f))(vx, y::@Box)
+                vy, dy = unbox(ctx, y), meta(ctx, y)
+                return Box(ctx, $f(vx, vy), propagate($dfdy, dy))
             end
         end
     end
