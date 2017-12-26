@@ -20,12 +20,12 @@ contexts can be completely unaware of `DiffCtx` and still compose correctly.
 =#
 
 using Cassette: @context, @primitive, unbox, meta, Box
-using SpecialFunctions
 using DiffRules
 
 @context DiffCtx
 
 for (M, f, arity) in DiffRules.diffrules()
+    M == :Base || continue
     if arity == 1
         dfdx = DiffRules.diffrule(M, f, :vx)
         @eval begin
